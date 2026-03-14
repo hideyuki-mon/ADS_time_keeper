@@ -65,7 +65,7 @@ function buildAgenda(mc) {
         ...item,
         presenterDuration: perPerson,
         duration: perPerson * mc,
-        desc: `1人あたり約${formatMin(perPerson)}（発表${formatMin(item.presentDuration)}＋FB${formatMin(item.feedbackDuration)}）`,
+        desc: `1人あたり約${formatMin(perPerson)}　🗣 発表 ${formatMin(item.presentDuration)} ＋ 💬 フィードバック ${formatMin(item.feedbackDuration)}`,
       };
     }
     return { ...item };
