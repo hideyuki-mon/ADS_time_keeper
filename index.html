@@ -13,38 +13,12 @@
       <p class="subtitle">自己紹介図解セッション</p>
     </header>
 
-    <!-- 役割設定画面 -->
-    <section id="setup-screen" class="screen active">
-      <div class="card">
-        <h2>役割を設定してください</h2>
-        <div class="role-inputs">
-          <div class="input-group">
-            <label for="facilitator-name">司会者</label>
-            <input type="text" id="facilitator-name" placeholder="名前を入力" />
-          </div>
-          <div class="input-group">
-            <label for="timekeeper-name">タイムキープ</label>
-            <input type="text" id="timekeeper-name" placeholder="名前を入力" />
-          </div>
-          <div class="input-group">
-            <label for="member-count">参加人数</label>
-            <input type="number" id="member-count" min="2" max="10" value="5" />
-          </div>
-          <div class="input-group">
-            <label for="team-name">チーム名</label>
-            <input type="text" id="team-name" placeholder="例: Aチーム" />
-          </div>
-        </div>
-        <button id="start-btn" class="btn btn-primary btn-large">セッション開始</button>
-      </div>
-    </section>
-
     <!-- メインセッション画面 -->
-    <section id="session-screen" class="screen">
+    <section id="session-screen" class="screen active">
       <!-- 役割表示 -->
       <div class="roles-bar">
-        <span class="role-badge facilitator">司会: <strong id="display-facilitator">-</strong></span>
-        <span class="role-badge timekeeper">タイムキープ: <strong id="display-timekeeper">-</strong></span>
+        <span class="role-badge facilitator">司会: <strong id="display-facilitator">未定</strong></span>
+        <span class="role-badge timekeeper">タイムキープ: <strong id="display-timekeeper">未定</strong></span>
         <span class="role-badge team" id="display-team-badge" style="display:none">チーム: <strong id="display-team">-</strong></span>
       </div>
 
@@ -57,6 +31,29 @@
       <div class="timer-section">
         <div class="current-agenda" id="current-agenda-title">セッション名</div>
         <div class="current-agenda-desc" id="current-agenda-desc"></div>
+
+        <!-- 司会・タイムキープ決めセクション専用：役割入力フォーム -->
+        <div id="role-form" class="role-form hidden">
+          <div class="role-form-grid">
+            <div class="input-group">
+              <label for="facilitator-name">👤 司会者</label>
+              <input type="text" id="facilitator-name" placeholder="名前を入力" />
+            </div>
+            <div class="input-group">
+              <label for="timekeeper-name">⏱ タイムキープ</label>
+              <input type="text" id="timekeeper-name" placeholder="名前を入力" />
+            </div>
+            <div class="input-group">
+              <label for="team-name">🏷 チーム名</label>
+              <input type="text" id="team-name" placeholder="例: Aチーム" />
+            </div>
+            <div class="input-group">
+              <label for="member-count">👥 参加人数</label>
+              <input type="number" id="member-count" min="2" max="10" value="5" />
+            </div>
+          </div>
+          <button id="apply-roles-btn" class="btn btn-primary">✔ 確定してタイマー開始</button>
+        </div>
 
         <div class="timer-display" id="timer-display">
           <span id="timer-minutes">00</span>:<span id="timer-seconds">00</span>

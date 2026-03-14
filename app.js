@@ -4,9 +4,10 @@ const BASE_AGENDA = [
     id: 'role',
     name: '司会・タイムキープ決め',
     duration: 60,
-    desc: '司会1名、タイムキープ1名を決める',
+    desc: '司会者・タイムキープ担当を決めて入力してください',
     icon: '🤝',
     hasPresenter: false,
+    isRoleSetup: true,
   },
   {
     id: 'good_new',
@@ -26,8 +27,8 @@ const BASE_AGENDA = [
     icon: '🗣️',
     hasPresenter: true,
     presenterDuration: null,
-    presentDuration: 180,   // 発表3分
-    feedbackDuration: 300,  // FB5分
+    presentDuration: 180,
+    feedbackDuration: 300,
     isIntro: true,
   },
   {
@@ -56,14 +57,14 @@ const BASE_AGENDA = [
   },
 ];
 
-function buildAgenda(memberCount) {
+function buildAgenda(mc) {
   return BASE_AGENDA.map(item => {
     if (item.id === 'intro') {
-      const perPerson = item.presentDuration + item.feedbackDuration; // 480s = 8分
+      const perPerson = item.presentDuration + item.feedbackDuration;
       return {
         ...item,
         presenterDuration: perPerson,
-        duration: perPerson * memberCount,
+        duration: perPerson * mc,
         desc: `1人あたり約${formatMin(perPerson)}（発表${formatMin(item.presentDuration)}＋FB${formatMin(item.feedbackDuration)}）`,
       };
     }
@@ -72,11 +73,12 @@ function buildAgenda(memberCount) {
 }
 
 // ---- STATE ----
-let agenda = [];
+let agenda = buildAgenda(5);
 let memberCount = 5;
-let facilitatorName = '';
-let timekeeperName = '';
+let facilitatorName = '未定';
+let timekeeperName = '未定';
 let teamName = '';
+let rolesConfirmed = false;
 
 let currentAgendaIndex = 0;
 let totalSecondsLeft = 0;
@@ -84,25 +86,15 @@ let totalSecondsOriginal = 0;
 let mainTimerInterval = null;
 let isRunning = false;
 
-// 発表者トラッカー
 let presenterIndex = 0;
 let presenterSecondsLeft = 0;
 let presenterSecondsOriginal = 0;
-let presenterTimerInterval = null; // フラグ兼用
+let presenterTimerInterval = null;
 let presenterNames = [];
-
-// introフェーズ管理: 'present' | 'feedback'
 let introPhase = 'present';
 
 // ---- DOM ----
-const setupScreen = document.getElementById('setup-screen');
 const sessionScreen = document.getElementById('session-screen');
-const facilitatorInput = document.getElementById('facilitator-name');
-const timekeeperInput = document.getElementById('timekeeper-name');
-const memberCountInput = document.getElementById('member-count');
-const teamNameInput = document.getElementById('team-name');
-const startBtn = document.getElementById('start-btn');
-
 const displayFacilitator = document.getElementById('display-facilitator');
 const displayTimekeeper = document.getElementById('display-timekeeper');
 const displayTeam = document.getElementById('display-team');
@@ -115,6 +107,13 @@ const timerDisplay = document.getElementById('timer-display');
 const timerMinutes = document.getElementById('timer-minutes');
 const timerSeconds = document.getElementById('timer-seconds');
 const timerProgressBar = document.getElementById('timer-progress-bar');
+
+const roleForm = document.getElementById('role-form');
+const facilitatorInput = document.getElementById('facilitator-name');
+const timekeeperInput = document.getElementById('timekeeper-name');
+const teamNameInput = document.getElementById('team-name');
+const memberCountInput = document.getElementById('member-count');
+const applyRolesBtn = document.getElementById('apply-roles-btn');
 
 const presenterTracker = document.getElementById('presenter-tracker');
 const currentPresenterName = document.getElementById('current-presenter-name');
@@ -132,7 +131,7 @@ const phaseFeedbackTime = document.getElementById('phase-feedback-time');
 
 const introGuide = document.getElementById('intro-guide');
 const guideSlackChannel = document.getElementById('guide-slack-channel');
-const guideSteps = document.querySelectorAll('.guide-step');
+const guideStepEls = document.querySelectorAll('.guide-step');
 
 const nextPhaseBtn = document.getElementById('next-phase-btn');
 const nextPresenterBtn = document.getElementById('next-presenter-btn');
@@ -190,6 +189,17 @@ function playBeep() {
   } catch (e) { /* 無視 */ }
 }
 
+function updateRolesBar() {
+  displayFacilitator.textContent = facilitatorName || '未定';
+  displayTimekeeper.textContent = timekeeperName || '未定';
+  if (teamName) {
+    displayTeam.textContent = teamName;
+    displayTeamBadge.style.display = '';
+  } else {
+    displayTeamBadge.style.display = 'none';
+  }
+}
+
 // ---- RENDER AGENDA LIST ----
 function renderAgendaList() {
   agendaListEl.innerHTML = '';
@@ -230,6 +240,20 @@ function loadAgenda(idx) {
   timerStartBtn.innerHTML = '<span>▶</span> 開始';
   isRunning = false;
 
+  // 役割設定アジェンダ：フォーム表示
+  if (item.isRoleSetup) {
+    roleForm.classList.remove('hidden');
+    timerDisplay.classList.add('hidden');
+    timerProgressBar.parentElement.classList.add('hidden');
+    timerStartBtn.disabled = true;
+  } else {
+    roleForm.classList.add('hidden');
+    timerDisplay.classList.remove('hidden');
+    timerProgressBar.parentElement.classList.remove('hidden');
+    timerStartBtn.disabled = false;
+  }
+
+  // 発表者トラッカー
   if (item.hasPresenter) {
     presenterTracker.classList.remove('hidden');
     presenterIndex = 0;
@@ -275,7 +299,6 @@ function loadPresenter(item) {
   if (item.isIntro) setIntroPhase('present', item);
 }
 
-// ---- INTRO PHASE ----
 function setIntroPhase(phase, item) {
   introPhase = phase;
   phaseBtnPresent.classList.toggle('active', phase === 'present');
@@ -288,7 +311,6 @@ function setIntroPhase(phase, item) {
     presenterTimerInterval = null;
     nextPhaseBtn.textContent = '💬 FBフェーズへ →';
     nextPhaseBtn.classList.remove('hidden');
-    // ステップ0〜2をアクティブ、3を非アクティブ
     highlightGuideSteps([0, 1, 2]);
   } else {
     presenterPhaseLabel.textContent = '💬 フィードバックタイマー';
@@ -296,14 +318,13 @@ function setIntroPhase(phase, item) {
     presenterSecondsOriginal = item.feedbackDuration;
     presenterTimerInterval = null;
     nextPhaseBtn.classList.add('hidden');
-    // ステップ3をアクティブ
     highlightGuideSteps([3]);
   }
   updatePresenterTimerDisplay();
 }
 
 function highlightGuideSteps(activeIndices) {
-  guideSteps.forEach(step => {
+  guideStepEls.forEach(step => {
     const idx = parseInt(step.dataset.step);
     step.classList.toggle('active', activeIndices.includes(idx));
     step.classList.toggle('dim', !activeIndices.includes(idx));
@@ -327,7 +348,6 @@ function updatePresenterTimerDisplay() {
   else if (ratio <= 0.3) presenterTimerDisplay.classList.add('warning');
 }
 
-// ---- JUMP TO AGENDA ----
 function jumpToAgenda(idx) {
   if (idx >= agenda.length) return;
   loadAgenda(idx);
@@ -409,14 +429,35 @@ function updateProgressBar() {
   timerProgressBar.style.width = `${ratio}%`;
 }
 
-// ---- NEXT PHASE (発表→FB) ----
+// ---- APPLY ROLES ----
+applyRolesBtn.addEventListener('click', () => {
+  facilitatorName = facilitatorInput.value.trim() || '未定';
+  timekeeperName = timekeeperInput.value.trim() || '未定';
+  teamName = teamNameInput.value.trim();
+  const newCount = parseInt(memberCountInput.value) || 5;
+  memberCount = Math.min(10, Math.max(2, newCount));
+
+  // introアジェンダの時間を人数に合わせて再計算
+  agenda = buildAgenda(memberCount);
+
+  updateRolesBar();
+  renderAgendaList();
+
+  // フォームを閉じてタイマーを表示・開始
+  roleForm.classList.add('hidden');
+  timerDisplay.classList.remove('hidden');
+  timerProgressBar.parentElement.classList.remove('hidden');
+  timerStartBtn.disabled = false;
+  startMainTimer();
+});
+
+// ---- PHASE / PRESENTER ----
 function advancePhase() {
   const item = agenda[currentAgendaIndex];
   if (!item.isIntro || introPhase !== 'present') return;
   setIntroPhase('feedback', item);
 }
 
-// ---- NEXT PRESENTER ----
 function advancePresenter() {
   const item = agenda[currentAgendaIndex];
   if (!item.hasPresenter) return;
@@ -437,7 +478,6 @@ function advancePresenter() {
   }
 }
 
-// ---- NEXT AGENDA ----
 function advanceAgenda() {
   const next = currentAgendaIndex + 1;
   if (next >= agenda.length) {
@@ -449,29 +489,6 @@ function advanceAgenda() {
 }
 
 // ---- EVENTS ----
-startBtn.addEventListener('click', () => {
-  facilitatorName = facilitatorInput.value.trim() || '未定';
-  timekeeperName = timekeeperInput.value.trim() || '未定';
-  teamName = teamNameInput.value.trim();
-  memberCount = parseInt(memberCountInput.value) || 5;
-  memberCount = Math.min(10, Math.max(2, memberCount));
-
-  agenda = buildAgenda(memberCount);
-
-  displayFacilitator.textContent = facilitatorName;
-  displayTimekeeper.textContent = timekeeperName;
-  if (teamName) {
-    displayTeam.textContent = teamName;
-    displayTeamBadge.style.display = '';
-  } else {
-    displayTeamBadge.style.display = 'none';
-  }
-
-  setupScreen.classList.remove('active');
-  sessionScreen.classList.add('active');
-  loadAgenda(0);
-});
-
 timerStartBtn.addEventListener('click', startMainTimer);
 
 timerPauseBtn.addEventListener('click', () => {
@@ -511,8 +528,14 @@ alertCloseBtn.addEventListener('click', () => {
 restartBtn.addEventListener('click', () => {
   stopMainTimer();
   completionBanner.classList.add('hidden');
-  sessionScreen.classList.remove('active');
-  setupScreen.classList.add('active');
+  facilitatorName = '未定';
+  timekeeperName = '未定';
+  teamName = '';
+  memberCount = 5;
+  rolesConfirmed = false;
+  agenda = buildAgenda(5);
+  updateRolesBar();
+  loadAgenda(0);
   timerStartBtn.innerHTML = '<span>▶</span> 開始';
 });
 
@@ -532,3 +555,6 @@ document.addEventListener('keydown', (e) => {
     timerNextBtn.click();
   }
 });
+
+// ---- INIT ----
+loadAgenda(0);
