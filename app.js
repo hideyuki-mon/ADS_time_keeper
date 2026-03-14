@@ -1,4 +1,18 @@
-// アジェンダ定義（秒単位）
+// ---- HELPERS（buildAgendaより先に定義が必要）----
+function formatSeconds(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function formatMin(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  if (sec === 0) return `${m}分`;
+  return `${m}分${sec}秒`;
+}
+
+// ---- アジェンダ定義（秒単位）----
 const BASE_AGENDA = [
   {
     id: 'role',
@@ -78,7 +92,6 @@ let memberCount = 5;
 let facilitatorName = '未定';
 let timekeeperName = '未定';
 let teamName = '';
-let rolesConfirmed = false;
 
 let currentAgendaIndex = 0;
 let totalSecondsLeft = 0;
@@ -94,7 +107,6 @@ let presenterNames = [];
 let introPhase = 'present';
 
 // ---- DOM ----
-const sessionScreen = document.getElementById('session-screen');
 const displayFacilitator = document.getElementById('display-facilitator');
 const displayTimekeeper = document.getElementById('display-timekeeper');
 const displayTeam = document.getElementById('display-team');
@@ -149,20 +161,7 @@ const alertMessage = document.getElementById('alert-message');
 const alertIcon = document.getElementById('alert-icon');
 const alertCloseBtn = document.getElementById('alert-close-btn');
 
-// ---- HELPERS ----
-function formatSeconds(s) {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-}
-
-function formatMin(s) {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  if (sec === 0) return `${m}分`;
-  return `${m}分${sec}秒`;
-}
-
+// ---- 残りHELPERS ----
 function showAlert(icon, message) {
   alertIcon.textContent = icon;
   alertMessage.textContent = message;
@@ -411,7 +410,7 @@ function updateMainTimerDisplay() {
   timerMinutes.textContent = String(m).padStart(2, '0');
   timerSeconds.textContent = String(s).padStart(2, '0');
 
-  const ratio = totalSecondsLeft / totalSecondsOriginal;
+  const ratio = totalSecondsOriginal > 0 ? totalSecondsLeft / totalSecondsOriginal : 0;
   timerDisplay.classList.remove('warning', 'danger', 'success');
   timerProgressBar.classList.remove('warning', 'danger');
 
@@ -437,13 +436,11 @@ applyRolesBtn.addEventListener('click', () => {
   const newCount = parseInt(memberCountInput.value) || 5;
   memberCount = Math.min(10, Math.max(2, newCount));
 
-  // introアジェンダの時間を人数に合わせて再計算
   agenda = buildAgenda(memberCount);
 
   updateRolesBar();
   renderAgendaList();
 
-  // フォームを閉じてタイマーを表示・開始
   roleForm.classList.add('hidden');
   timerDisplay.classList.remove('hidden');
   timerProgressBar.parentElement.classList.remove('hidden');
@@ -532,7 +529,6 @@ restartBtn.addEventListener('click', () => {
   timekeeperName = '未定';
   teamName = '';
   memberCount = 5;
-  rolesConfirmed = false;
   agenda = buildAgenda(5);
   updateRolesBar();
   loadAgenda(0);
