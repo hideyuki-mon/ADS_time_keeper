@@ -472,6 +472,11 @@ applyRolesBtn.addEventListener('click', () => {
 function advancePhase() {
   const item = agenda[currentAgendaIndex];
   if (!item.isIntro || introPhase !== 'present') return;
+  // 発表の残り時間をスキップ済みとして反映
+  totalSecondsLeft -= presenterSecondsLeft;
+  presenterSecondsLeft = 0;
+  updateMainTimerDisplay();
+  updateProgressBar();
   setIntroPhase('feedback', item);
 }
 
@@ -479,6 +484,12 @@ function advancePresenter() {
   const item = agenda[currentAgendaIndex];
   if (!item.hasPresenter) return;
   presenterTimerInterval = null;
+
+  // 現在の発表者の残り時間をスキップ済みとして反映
+  totalSecondsLeft -= presenterSecondsLeft;
+  if (totalSecondsLeft < 0) totalSecondsLeft = 0;
+  updateMainTimerDisplay();
+  updateProgressBar();
 
   if (presenterIndex < memberCount - 1) {
     presenterIndex++;
