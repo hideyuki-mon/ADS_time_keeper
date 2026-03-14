@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADS タイムキーパー</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>ADS タイムキーパー</h1>
+      <p class="subtitle">自己紹介図解セッション</p>
+    </header>
+
+    <!-- 役割設定画面 -->
+    <section id="setup-screen" class="screen active">
+      <div class="card">
+        <h2>役割を設定してください</h2>
+        <div class="role-inputs">
+          <div class="input-group">
+            <label for="facilitator-name">司会者</label>
+            <input type="text" id="facilitator-name" placeholder="名前を入力" />
+          </div>
+          <div class="input-group">
+            <label for="timekeeper-name">タイムキープ</label>
+            <input type="text" id="timekeeper-name" placeholder="名前を入力" />
+          </div>
+          <div class="input-group">
+            <label for="member-count">参加人数</label>
+            <input type="number" id="member-count" min="2" max="10" value="5" />
+          </div>
+        </div>
+        <button id="start-btn" class="btn btn-primary btn-large">セッション開始</button>
+      </div>
+    </section>
+
+    <!-- メインセッション画面 -->
+    <section id="session-screen" class="screen">
+      <!-- 役割表示 -->
+      <div class="roles-bar">
+        <span class="role-badge facilitator">司会: <strong id="display-facilitator">-</strong></span>
+        <span class="role-badge timekeeper">タイムキープ: <strong id="display-timekeeper">-</strong></span>
+      </div>
+
+      <!-- アジェンダ一覧 -->
+      <div class="agenda-container">
+        <div class="agenda-list" id="agenda-list"></div>
+      </div>
+
+      <!-- タイマー表示 -->
+      <div class="timer-section">
+        <div class="current-agenda" id="current-agenda-title">セッション名</div>
+        <div class="current-agenda-desc" id="current-agenda-desc"></div>
+
+        <div class="timer-display" id="timer-display">
+          <span id="timer-minutes">00</span>:<span id="timer-seconds">00</span>
+        </div>
+
+        <div class="timer-progress">
+          <div class="timer-progress-bar" id="timer-progress-bar"></div>
+        </div>
+
+        <!-- 自己紹介セクション専用：発表者トラッカー -->
+        <div id="presenter-tracker" class="presenter-tracker hidden">
+          <div class="presenter-info">
+            <span class="presenter-label">現在の発表者</span>
+            <span class="presenter-name" id="current-presenter-name">-</span>
+            <span class="presenter-count" id="presenter-count"></span>
+          </div>
+          <div class="presenter-timer">
+            <span class="presenter-timer-label">発表者タイマー</span>
+            <div class="presenter-timer-display" id="presenter-timer-display">
+              <span id="presenter-minutes">00</span>:<span id="presenter-seconds">00</span>
+            </div>
+          </div>
+          <button id="next-presenter-btn" class="btn btn-secondary">次の発表者へ →</button>
+        </div>
+
+        <div class="timer-controls">
+          <button id="timer-start-btn" class="btn btn-primary">
+            <span id="start-icon">▶</span> 開始
+          </button>
+          <button id="timer-pause-btn" class="btn btn-secondary" disabled>
+            ⏸ 一時停止
+          </button>
+          <button id="timer-reset-btn" class="btn btn-outline">
+            ↺ リセット
+          </button>
+          <button id="timer-next-btn" class="btn btn-accent">
+            次へ ›
+          </button>
+        </div>
+      </div>
+
+      <!-- 完了画面 -->
+      <div id="completion-banner" class="completion-banner hidden">
+        <div class="completion-content">
+          <div class="completion-icon">🎉</div>
+          <h2>セッション完了！</h2>
+          <p>お疲れ様でした！</p>
+          <button id="restart-btn" class="btn btn-primary">最初からやり直す</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="alert-overlay" class="alert-overlay hidden">
+    <div class="alert-box">
+      <div class="alert-icon" id="alert-icon">⏰</div>
+      <p id="alert-message">時間です！</p>
+      <button id="alert-close-btn" class="btn btn-primary">確認</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
