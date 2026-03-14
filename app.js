@@ -119,6 +119,7 @@ const timerDisplay = document.getElementById('timer-display');
 const timerMinutes = document.getElementById('timer-minutes');
 const timerSeconds = document.getElementById('timer-seconds');
 const timerProgressBar = document.getElementById('timer-progress-bar');
+const timerProgress = document.getElementById('timer-progress');
 
 const roleForm = document.getElementById('role-form');
 const facilitatorInput = document.getElementById('facilitator-name');
@@ -243,12 +244,12 @@ function loadAgenda(idx) {
   if (item.isRoleSetup) {
     roleForm.classList.remove('hidden');
     timerDisplay.classList.add('hidden');
-    timerProgressBar.parentElement.classList.add('hidden');
+    timerProgress.classList.add('hidden');
     timerStartBtn.disabled = true;
   } else {
     roleForm.classList.add('hidden');
     timerDisplay.classList.remove('hidden');
-    timerProgressBar.parentElement.classList.remove('hidden');
+    timerProgress.classList.remove('hidden');
     timerStartBtn.disabled = false;
   }
 
@@ -443,7 +444,7 @@ applyRolesBtn.addEventListener('click', () => {
 
   roleForm.classList.add('hidden');
   timerDisplay.classList.remove('hidden');
-  timerProgressBar.parentElement.classList.remove('hidden');
+  timerProgress.classList.remove('hidden');
   timerStartBtn.disabled = false;
   startMainTimer();
 });

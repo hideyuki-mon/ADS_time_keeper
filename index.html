@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ADS タイムキーパー</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <div id="app">
@@ -55,11 +55,11 @@
           <button id="apply-roles-btn" class="btn btn-primary">✔ 確定してタイマー開始</button>
         </div>
 
-        <div class="timer-display" id="timer-display">
+        <div class="timer-display hidden" id="timer-display">
           <span id="timer-minutes">00</span>:<span id="timer-seconds">00</span>
         </div>
 
-        <div class="timer-progress">
+        <div class="timer-progress hidden" id="timer-progress">
           <div class="timer-progress-bar" id="timer-progress-bar"></div>
         </div>
 
@@ -137,6 +137,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
