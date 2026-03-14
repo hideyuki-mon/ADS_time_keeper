@@ -550,6 +550,38 @@ header h1 {
   text-decoration: line-through;
 }
 
+.order-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  align-self: center;
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+.fb-label {
+  color: #6ee7b7;
+  text-transform: none;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.order-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
 /* ---- SURVEY LINK ---- */
 .survey-link-box {
   margin-bottom: 10px;

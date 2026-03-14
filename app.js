@@ -107,7 +107,7 @@ let teamName = '';
 let memberNames = [];           // 入力された名前の配列
 let orderGoodNew = [];          // Good&New用ランダム順
 let orderIntro = [];            // 自己紹介発表用ランダム順
-let orderFeedback = [];         // FB用ランダム順（発表順と異なる）
+let feedbackOrders = {};        // 発表者名 → そのFB担当者のランダム順 のマップ
 
 let currentAgendaIndex = 0;
 let totalSecondsLeft = 0;
@@ -204,7 +204,6 @@ memberCountInput.addEventListener('input', () => {
 
 // ---- ランダム発表順の生成 ----
 function generateOrders(names) {
-  // 必ず全員違う順序になるよう再シャッフル
   orderGoodNew = shuffle(names);
 
   let introOrder;
@@ -212,11 +211,12 @@ function generateOrders(names) {
   while (names.length > 1 && introOrder[0] === orderGoodNew[0]);
   orderIntro = introOrder;
 
-  // FBは発表順と1番目が被らないように
-  let fbOrder;
-  do { fbOrder = shuffle(names); }
-  while (names.length > 1 && fbOrder[0] === orderIntro[0]);
-  orderFeedback = fbOrder;
+  // 発表者ごとに「その人以外の全員」をランダム並び替えしたFB順を生成
+  feedbackOrders = {};
+  orderIntro.forEach(presenter => {
+    const others = names.filter(n => n !== presenter);
+    feedbackOrders[presenter] = shuffle(others);
+  });
 }
 
 // ---- HELPERS ----
@@ -260,17 +260,25 @@ function updateRolesBar() {
 // ---- 発表順リスト表示 ----
 function renderOrderList(order, currentIdx) {
   if (!orderListEl) return;
-  if (!order || order.length === 0) {
-    orderListEl.innerHTML = '';
-    return;
-  }
-  orderListEl.innerHTML = order.map((name, i) => {
+  if (!order || order.length === 0) { orderListEl.innerHTML = ''; return; }
+  orderListEl.innerHTML = `<span class="order-label">発表順</span>` + order.map((name, i) => {
     const isDone = i < currentIdx;
     const isCurrent = i === currentIdx;
     return `<span class="order-item ${isCurrent ? 'current' : ''} ${isDone ? 'done' : ''}">
       ${isDone ? '✓' : (isCurrent ? '▶' : (i + 1))} ${name}
     </span>`;
   }).join('');
+}
+
+function renderFeedbackOrderList(presenter) {
+  if (!orderListEl) return;
+  const fbList = feedbackOrders[presenter];
+  if (!fbList || fbList.length === 0) { orderListEl.innerHTML = ''; return; }
+  orderListEl.innerHTML =
+    `<span class="order-label fb-label">💬 FBの順番（${presenter}さんへ）</span>` +
+    fbList.map((name, i) =>
+      `<span class="order-item"><span class="order-num">${i + 1}</span>${name}</span>`
+    ).join('');
 }
 
 // ---- RENDER AGENDA LIST ----
@@ -407,8 +415,9 @@ function setIntroPhase(phase, item) {
     goFeedbackBtn.classList.add('hidden');
     nextPresenterBtn.classList.remove('hidden');
     highlightGuideSteps([3]);
-    // FB順を表示（FBは発表者固定のまま）
-    renderOrderList(orderIntro.length ? orderIntro : presenterNames, presenterIndex);
+    // 発表者へのFB担当者順を表示
+    const currentPresenter = presenterNames[presenterIndex];
+    renderFeedbackOrderList(currentPresenter);
   }
   updatePresenterTimerDisplay();
 }
@@ -652,7 +661,7 @@ restartBtn.addEventListener('click', () => {
   memberNames = [];
   orderGoodNew = [];
   orderIntro = [];
-  orderFeedback = [];
+  feedbackOrders = {};
   agenda = buildAgenda(5);
   updateRolesBar();
   loadAgenda(0);
