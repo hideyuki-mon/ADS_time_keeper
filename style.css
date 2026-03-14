@@ -74,7 +74,7 @@ header h1 {
 .roles-bar {
   display: flex;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -102,6 +102,31 @@ header h1 {
   background: rgba(14, 165, 233, 0.15);
   border-color: var(--secondary);
   color: #7dd3fc;
+}
+
+.role-badge.overall-progress-badge {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: var(--warning);
+  color: #fcd34d;
+  margin-left: auto;
+}
+
+/* ---- OVERALL PROGRESS BAR ---- */
+.overall-progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.overall-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--warning), #f59e0b);
+  border-radius: 999px;
+  transition: width 0.8s ease;
+  width: 0%;
 }
 
 /* ---- AGENDA LIST ---- */

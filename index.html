@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ADS タイムキーパー</title>
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
   <div id="app">
@@ -20,6 +20,12 @@
         <span class="role-badge facilitator">司会: <strong id="display-facilitator">未定</strong></span>
         <span class="role-badge timekeeper">タイムキープ: <strong id="display-timekeeper">未定</strong></span>
         <span class="role-badge team" id="display-team-badge" style="display:none">チーム: <strong id="display-team">-</strong></span>
+        <span class="role-badge overall-progress-badge">全体進捗: <strong id="display-overall-pct">0%</strong></span>
+      </div>
+
+      <!-- 全体進捗バー -->
+      <div class="overall-progress">
+        <div class="overall-progress-bar" id="overall-progress-bar"></div>
       </div>
 
       <!-- アジェンダ一覧 -->
@@ -135,6 +141,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

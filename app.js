@@ -111,6 +111,8 @@ const displayFacilitator = document.getElementById('display-facilitator');
 const displayTimekeeper = document.getElementById('display-timekeeper');
 const displayTeam = document.getElementById('display-team');
 const displayTeamBadge = document.getElementById('display-team-badge');
+const displayOverallPct = document.getElementById('display-overall-pct');
+const overallProgressBar = document.getElementById('overall-progress-bar');
 const agendaListEl = document.getElementById('agenda-list');
 
 const currentAgendaTitle = document.getElementById('current-agenda-title');
@@ -426,6 +428,22 @@ function updateMainTimerDisplay() {
 function updateProgressBar() {
   const ratio = totalSecondsOriginal > 0 ? (totalSecondsLeft / totalSecondsOriginal) * 100 : 0;
   timerProgressBar.style.width = `${ratio}%`;
+  updateOverallProgress();
+}
+
+function updateOverallProgress() {
+  const totalAll = agenda.reduce((sum, item) => sum + item.duration, 0);
+  if (totalAll === 0) return;
+  // 完了済みアジェンダの合計
+  const doneSeconds = agenda
+    .slice(0, currentAgendaIndex)
+    .reduce((sum, item) => sum + item.duration, 0);
+  // 現在のアジェンダの経過分
+  const currentElapsed = totalSecondsOriginal - totalSecondsLeft;
+  const elapsed = doneSeconds + currentElapsed;
+  const pct = Math.min(100, Math.round((elapsed / totalAll) * 100));
+  displayOverallPct.textContent = `${pct}%`;
+  overallProgressBar.style.width = `${pct}%`;
 }
 
 // ---- APPLY ROLES ----
