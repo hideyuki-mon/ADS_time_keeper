@@ -282,6 +282,7 @@ function loadAgenda(idx) {
   }
 
   renderAgendaList();
+  updateOverallProgress();
 }
 
 function buildPresenterNames() {
@@ -458,6 +459,7 @@ applyRolesBtn.addEventListener('click', () => {
 
   updateRolesBar();
   renderAgendaList();
+  updateOverallProgress();
 
   roleForm.classList.add('hidden');
   timerDisplay.classList.remove('hidden');
