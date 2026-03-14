@@ -147,6 +147,7 @@ const guideSlackChannel = document.getElementById('guide-slack-channel');
 const guideStepEls = document.querySelectorAll('.guide-step');
 
 const nextPresenterBtn = document.getElementById('next-presenter-btn');
+const goFeedbackBtn = document.getElementById('go-feedback-btn');
 
 const timerStartBtn = document.getElementById('timer-start-btn');
 const timerPauseBtn = document.getElementById('timer-pause-btn');
@@ -270,6 +271,8 @@ function loadAgenda(idx) {
     } else {
       introPhaseBar.classList.add('hidden');
       introGuide.classList.add('hidden');
+      goFeedbackBtn.classList.add('hidden');
+      nextPresenterBtn.classList.remove('hidden');
       presenterPhaseLabel.textContent = '発表者タイマー';
     }
   } else {
@@ -304,12 +307,16 @@ function setIntroPhase(phase, item) {
     presenterSecondsLeft = item.presentDuration;
     presenterSecondsOriginal = item.presentDuration;
     presenterTimerInterval = null;
+    goFeedbackBtn.classList.remove('hidden');
+    nextPresenterBtn.classList.add('hidden');
     highlightGuideSteps([0, 1, 2]);
   } else {
     presenterPhaseLabel.textContent = '💬 フィードバックタイマー';
     presenterSecondsLeft = item.feedbackDuration;
     presenterSecondsOriginal = item.feedbackDuration;
     presenterTimerInterval = null;
+    goFeedbackBtn.classList.add('hidden');
+    nextPresenterBtn.classList.remove('hidden');
     highlightGuideSteps([3]);
   }
   updatePresenterTimerDisplay();
@@ -508,6 +515,7 @@ timerResetBtn.addEventListener('click', () => {
 });
 
 timerNextBtn.addEventListener('click', advanceAgenda);
+goFeedbackBtn.addEventListener('click', advancePhase);
 nextPresenterBtn.addEventListener('click', advancePresenter);
 
 alertCloseBtn.addEventListener('click', () => {
