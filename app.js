@@ -234,6 +234,29 @@ memberCountInput.addEventListener('input', () => {
   renderMemberNameInputs(n);
 });
 
+// ---- 司会者・タイムキープの相互排他プルダウン制御 ----
+function updateRoleDropdowns() {
+  const facVal = facilitatorInput.value;
+  const tkVal  = timekeeperInput.value;
+
+  // タイムキープの選択肢：司会者で選ばれた人を除外
+  Array.from(timekeeperInput.options).forEach(opt => {
+    opt.disabled = opt.value !== '' && opt.value === facVal;
+  });
+  // タイムキープで選ばれていた人が司会者と一致した場合はリセット
+  if (tkVal !== '' && tkVal === facVal) timekeeperInput.value = '';
+
+  // 司会者の選択肢：タイムキープで選ばれた人を除外
+  Array.from(facilitatorInput.options).forEach(opt => {
+    opt.disabled = opt.value !== '' && opt.value === tkVal;
+  });
+  // 司会者で選ばれていた人がタイムキープと一致した場合はリセット
+  if (facVal !== '' && facVal === tkVal) facilitatorInput.value = '';
+}
+
+facilitatorInput.addEventListener('change', updateRoleDropdowns);
+timekeeperInput.addEventListener('change', updateRoleDropdowns);
+
 // ---- ランダム発表順の生成 ----
 function generateOrders(names) {
   orderGoodNew = shuffle(names);
