@@ -1,4 +1,4 @@
-// ---- HELPERS（buildAgendaより先に定義が必要）----
+// ---- HELPERS ----
 function formatSeconds(s) {
   const m = Math.floor(s / 60);
   const sec = s % 60;
@@ -12,7 +12,17 @@ function formatMin(s) {
   return `${m}分${sec}秒`;
 }
 
-// ---- アジェンダ定義（秒単位）----
+// Fisher-Yatesシャッフル（元配列を変えない）
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ---- アジェンダ定義 ----
 const BASE_AGENDA = [
   {
     id: 'role',
@@ -93,6 +103,12 @@ let facilitatorName = '未定';
 let timekeeperName = '未定';
 let teamName = '';
 
+// 参加者名・発表順（3パターン）
+let memberNames = [];           // 入力された名前の配列
+let orderGoodNew = [];          // Good&New用ランダム順
+let orderIntro = [];            // 自己紹介発表用ランダム順
+let orderFeedback = [];         // FB用ランダム順（発表順と異なる）
+
 let currentAgendaIndex = 0;
 let totalSecondsLeft = 0;
 let totalSecondsOriginal = 0;
@@ -129,6 +145,7 @@ const facilitatorInput = document.getElementById('facilitator-name');
 const timekeeperInput = document.getElementById('timekeeper-name');
 const teamNameInput = document.getElementById('team-name');
 const memberCountInput = document.getElementById('member-count');
+const memberNamesGrid = document.getElementById('member-names-grid');
 const applyRolesBtn = document.getElementById('apply-roles-btn');
 
 const presenterTracker = document.getElementById('presenter-tracker');
@@ -138,6 +155,7 @@ const presenterTimerDisplay = document.getElementById('presenter-timer-display')
 const presenterMinutesEl = document.getElementById('presenter-minutes');
 const presenterSecsEl = document.getElementById('presenter-seconds');
 const presenterPhaseLabel = document.getElementById('presenter-phase-label');
+const orderListEl = document.getElementById('order-list');
 
 const introPhaseBar = document.getElementById('intro-phase-bar');
 const phaseBtnPresent = document.getElementById('phase-btn-present');
@@ -165,7 +183,43 @@ const alertMessage = document.getElementById('alert-message');
 const alertIcon = document.getElementById('alert-icon');
 const alertCloseBtn = document.getElementById('alert-close-btn');
 
-// ---- 残りHELPERS ----
+// ---- 参加者名入力欄の動的生成 ----
+function renderMemberNameInputs(count) {
+  memberNamesGrid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement('div');
+    div.className = 'input-group';
+    div.innerHTML = `
+      <label>参加者 ${i + 1}</label>
+      <input type="text" class="member-name-input" placeholder="名前を入力" value="${memberNames[i] || ''}" />
+    `;
+    memberNamesGrid.appendChild(div);
+  }
+}
+
+memberCountInput.addEventListener('input', () => {
+  const n = Math.min(10, Math.max(2, parseInt(memberCountInput.value) || 5));
+  renderMemberNameInputs(n);
+});
+
+// ---- ランダム発表順の生成 ----
+function generateOrders(names) {
+  // 必ず全員違う順序になるよう再シャッフル
+  orderGoodNew = shuffle(names);
+
+  let introOrder;
+  do { introOrder = shuffle(names); }
+  while (names.length > 1 && introOrder[0] === orderGoodNew[0]);
+  orderIntro = introOrder;
+
+  // FBは発表順と1番目が被らないように
+  let fbOrder;
+  do { fbOrder = shuffle(names); }
+  while (names.length > 1 && fbOrder[0] === orderIntro[0]);
+  orderFeedback = fbOrder;
+}
+
+// ---- HELPERS ----
 function showAlert(icon, message) {
   alertIcon.textContent = icon;
   alertMessage.textContent = message;
@@ -201,6 +255,22 @@ function updateRolesBar() {
   } else {
     displayTeamBadge.style.display = 'none';
   }
+}
+
+// ---- 発表順リスト表示 ----
+function renderOrderList(order, currentIdx) {
+  if (!orderListEl) return;
+  if (!order || order.length === 0) {
+    orderListEl.innerHTML = '';
+    return;
+  }
+  orderListEl.innerHTML = order.map((name, i) => {
+    const isDone = i < currentIdx;
+    const isCurrent = i === currentIdx;
+    return `<span class="order-item ${isCurrent ? 'current' : ''} ${isDone ? 'done' : ''}">
+      ${isDone ? '✓' : (isCurrent ? '▶' : (i + 1))} ${name}
+    </span>`;
+  }).join('');
 }
 
 // ---- RENDER AGENDA LIST ----
@@ -243,7 +313,6 @@ function loadAgenda(idx) {
   timerStartBtn.innerHTML = '<span>▶</span> 開始';
   isRunning = false;
 
-  // 役割設定アジェンダ：フォーム表示
   if (item.isRoleSetup) {
     roleForm.classList.remove('hidden');
     timerDisplay.classList.add('hidden');
@@ -256,18 +325,16 @@ function loadAgenda(idx) {
     timerStartBtn.disabled = false;
   }
 
-  // アンケートリンク
   if (item.id === 'survey') {
     surveyLinkBox.classList.remove('hidden');
   } else {
     surveyLinkBox.classList.add('hidden');
   }
 
-  // 発表者トラッカー
   if (item.hasPresenter) {
     presenterTracker.classList.remove('hidden');
     presenterIndex = 0;
-    presenterNames = buildPresenterNames();
+    presenterNames = getPresenterNamesFor(item.id);
     loadPresenter(item);
 
     if (item.isIntro) {
@@ -284,16 +351,25 @@ function loadAgenda(idx) {
       goFeedbackBtn.classList.add('hidden');
       nextPresenterBtn.classList.remove('hidden');
       presenterPhaseLabel.textContent = '発表者タイマー';
+      renderOrderList(presenterNames, presenterIndex);
     }
   } else {
     presenterTracker.classList.add('hidden');
+    orderListEl.innerHTML = '';
   }
 
   renderAgendaList();
   updateOverallProgress();
 }
 
-function buildPresenterNames() {
+// アジェンダIDに応じた発表順を返す
+function getPresenterNamesFor(agendaId) {
+  if (agendaId === 'good_new') return orderGoodNew.length ? [...orderGoodNew] : buildFallbackNames();
+  if (agendaId === 'intro') return orderIntro.length ? [...orderIntro] : buildFallbackNames();
+  return buildFallbackNames();
+}
+
+function buildFallbackNames() {
   return Array.from({ length: memberCount }, (_, i) => `参加者 ${i + 1}`);
 }
 
@@ -321,6 +397,8 @@ function setIntroPhase(phase, item) {
     goFeedbackBtn.classList.remove('hidden');
     nextPresenterBtn.classList.add('hidden');
     highlightGuideSteps([0, 1, 2]);
+    // 自己紹介発表順を表示
+    renderOrderList(orderIntro.length ? orderIntro : presenterNames, presenterIndex);
   } else {
     presenterPhaseLabel.textContent = '💬 フィードバックタイマー';
     presenterSecondsLeft = item.feedbackDuration;
@@ -329,6 +407,8 @@ function setIntroPhase(phase, item) {
     goFeedbackBtn.classList.add('hidden');
     nextPresenterBtn.classList.remove('hidden');
     highlightGuideSteps([3]);
+    // FB順を表示（FBは発表者固定のまま）
+    renderOrderList(orderIntro.length ? orderIntro : presenterNames, presenterIndex);
   }
   updatePresenterTimerDisplay();
 }
@@ -343,7 +423,7 @@ function highlightGuideSteps(activeIndices) {
 
 function updatePresenterDisplay(item) {
   currentPresenterName.textContent = presenterNames[presenterIndex] || '-';
-  presenterCount.textContent = `${presenterIndex + 1} / ${memberCount}人`;
+  presenterCount.textContent = `${presenterIndex + 1} / ${presenterNames.length}人`;
 }
 
 function updatePresenterTimerDisplay() {
@@ -443,11 +523,7 @@ function updateProgressBar() {
 function updateOverallProgress() {
   const totalAll = agenda.reduce((sum, item) => sum + item.duration, 0);
   if (totalAll === 0) return;
-  // 完了済みアジェンダの合計
-  const doneSeconds = agenda
-    .slice(0, currentAgendaIndex)
-    .reduce((sum, item) => sum + item.duration, 0);
-  // 現在のアジェンダの経過分
+  const doneSeconds = agenda.slice(0, currentAgendaIndex).reduce((sum, item) => sum + item.duration, 0);
   const currentElapsed = totalSecondsOriginal - totalSecondsLeft;
   const elapsed = doneSeconds + currentElapsed;
   const pct = Math.min(100, Math.round((elapsed / totalAll) * 100));
@@ -463,8 +539,14 @@ applyRolesBtn.addEventListener('click', () => {
   const newCount = parseInt(memberCountInput.value) || 5;
   memberCount = Math.min(10, Math.max(2, newCount));
 
-  agenda = buildAgenda(memberCount);
+  // 入力された名前を収集（空白なら「参加者N」で補完）
+  const inputs = memberNamesGrid.querySelectorAll('.member-name-input');
+  memberNames = Array.from(inputs).map((input, i) => input.value.trim() || `参加者 ${i + 1}`);
 
+  // ランダム発表順を生成
+  generateOrders(memberNames);
+
+  agenda = buildAgenda(memberCount);
   updateRolesBar();
   renderAgendaList();
   updateOverallProgress();
@@ -480,7 +562,6 @@ applyRolesBtn.addEventListener('click', () => {
 function advancePhase() {
   const item = agenda[currentAgendaIndex];
   if (!item.isIntro || introPhase !== 'present') return;
-  // 発表の残り時間をスキップ済みとして反映
   totalSecondsLeft -= presenterSecondsLeft;
   presenterSecondsLeft = 0;
   updateMainTimerDisplay();
@@ -493,13 +574,12 @@ function advancePresenter() {
   if (!item.hasPresenter) return;
   presenterTimerInterval = null;
 
-  // 現在の発表者の残り時間をスキップ済みとして反映
   totalSecondsLeft -= presenterSecondsLeft;
   if (totalSecondsLeft < 0) totalSecondsLeft = 0;
   updateMainTimerDisplay();
   updateProgressBar();
 
-  if (presenterIndex < memberCount - 1) {
+  if (presenterIndex < presenterNames.length - 1) {
     presenterIndex++;
     updatePresenterDisplay(item);
     if (item.isIntro) {
@@ -508,6 +588,7 @@ function advancePresenter() {
       presenterSecondsLeft = item.presenterDuration || 60;
       presenterSecondsOriginal = presenterSecondsLeft;
       updatePresenterTimerDisplay();
+      renderOrderList(presenterNames, presenterIndex);
     }
   } else {
     showAlert('🎊', '全員の発表が終わりました！\n次のセッションへ進んでください');
@@ -568,6 +649,10 @@ restartBtn.addEventListener('click', () => {
   timekeeperName = '未定';
   teamName = '';
   memberCount = 5;
+  memberNames = [];
+  orderGoodNew = [];
+  orderIntro = [];
+  orderFeedback = [];
   agenda = buildAgenda(5);
   updateRolesBar();
   loadAgenda(0);
@@ -592,4 +677,5 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---- INIT ----
+renderMemberNameInputs(5);
 loadAgenda(0);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ADS タイムキーパー</title>
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body>
   <div id="app">
@@ -58,6 +58,11 @@
               <input type="number" id="member-count" min="2" max="10" value="5" />
             </div>
           </div>
+          <!-- 参加者名入力 -->
+          <div class="member-names-section">
+            <div class="member-names-label">👥 参加者の名前（入力するとランダム発表順を自動生成）</div>
+            <div class="member-names-grid" id="member-names-grid"></div>
+          </div>
           <button id="apply-roles-btn" class="btn btn-primary">✔ 確定してタイマー開始</button>
         </div>
 
@@ -77,13 +82,16 @@
           </a>
         </div>
 
-        <!-- 自己紹介セクション専用：発表者トラッカー -->
+        <!-- 発表者トラッカー -->
         <div id="presenter-tracker" class="presenter-tracker hidden">
           <div class="presenter-info">
             <span class="presenter-label">現在の発表者</span>
             <span class="presenter-name" id="current-presenter-name">-</span>
             <span class="presenter-count" id="presenter-count"></span>
           </div>
+
+          <!-- 発表順リスト -->
+          <div id="order-list" class="order-list"></div>
 
           <!-- 発表フェーズ表示（intro専用） -->
           <div id="intro-phase-bar" class="phase-bar hidden">
@@ -149,6 +157,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

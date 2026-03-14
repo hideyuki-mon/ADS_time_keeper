@@ -499,6 +499,57 @@ header h1 {
   margin-top: 1px;
 }
 
+/* ---- MEMBER NAMES SECTION ---- */
+.member-names-section {
+  margin-bottom: 10px;
+}
+
+.member-names-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.member-names-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .member-names-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---- ORDER LIST ---- */
+.order-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.order-item {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.order-item.current {
+  background: rgba(79, 70, 229, 0.25);
+  border-color: var(--primary-light);
+  color: var(--primary-light);
+}
+
+.order-item.done {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
 /* ---- SURVEY LINK ---- */
 .survey-link-box {
   margin-bottom: 10px;
