@@ -146,7 +146,6 @@ const introGuide = document.getElementById('intro-guide');
 const guideSlackChannel = document.getElementById('guide-slack-channel');
 const guideStepEls = document.querySelectorAll('.guide-step');
 
-const nextPhaseBtn = document.getElementById('next-phase-btn');
 const nextPresenterBtn = document.getElementById('next-presenter-btn');
 
 const timerStartBtn = document.getElementById('timer-start-btn');
@@ -509,7 +508,6 @@ timerResetBtn.addEventListener('click', () => {
 });
 
 timerNextBtn.addEventListener('click', advanceAgenda);
-nextPhaseBtn.addEventListener('click', advancePhase);
 nextPresenterBtn.addEventListener('click', advancePresenter);
 
 alertCloseBtn.addEventListener('click', () => {
