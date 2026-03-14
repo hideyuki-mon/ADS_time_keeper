@@ -183,15 +183,35 @@ const alertMessage = document.getElementById('alert-message');
 const alertIcon = document.getElementById('alert-icon');
 const alertCloseBtn = document.getElementById('alert-close-btn');
 
-// ---- 参加者名入力欄の動的生成 ----
+// ---- メンバー候補リスト ----
+const MEMBER_OPTIONS = [
+  'べーやん',
+  'くわちゃん（桑原佳介）',
+  'ゆう(古賀優摩)',
+  'みやた',
+  'まさ(平野 真康)',
+  'ビーノ(帯野 誠明)',
+  'ジリ（沢尻　由央）',
+  'もんでん（門傳英幸）',
+  'まこっちゃん（大西誠）',
+  'ゆうさん（鈴木佑介）',
+];
+
+// ---- 参加者名プルダウンの動的生成 ----
 function renderMemberNameInputs(count) {
   memberNamesGrid.innerHTML = '';
+  const optionsHtml = `<option value="">-- 選択してください --</option>` +
+    MEMBER_OPTIONS.map(name => `<option value="${name}">${name}</option>`).join('');
+
   for (let i = 0; i < count; i++) {
     const div = document.createElement('div');
     div.className = 'input-group';
+    const selected = memberNames[i] || '';
     div.innerHTML = `
       <label>参加者 ${i + 1}</label>
-      <input type="text" class="member-name-input" placeholder="名前を入力" value="${memberNames[i] || ''}" />
+      <select class="member-name-input">
+        ${optionsHtml.replace(`value="${selected}"`, `value="${selected}" selected`)}
+      </select>
     `;
     memberNamesGrid.appendChild(div);
   }
