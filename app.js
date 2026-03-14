@@ -16,6 +16,7 @@ const BASE_AGENDA = [
     icon: '👏',
     hasPresenter: true,
     presenterDuration: 60,
+    isIntro: false,
   },
   {
     id: 'intro',
@@ -24,8 +25,10 @@ const BASE_AGENDA = [
     desc: '発表者ごとにフィードバックを行う（全体40分）',
     icon: '🗣️',
     hasPresenter: true,
-    presenterDuration: null, // 人数に応じて計算
-    presenterFeedbackDuration: null,
+    presenterDuration: null,
+    presentDuration: 180,   // 発表3分
+    feedbackDuration: 300,  // FB5分
+    isIntro: true,
   },
   {
     id: 'discussion',
@@ -53,16 +56,15 @@ const BASE_AGENDA = [
   },
 ];
 
-// 自己紹介アジェンダの1人あたり時間計算（40分 / 人数）
 function buildAgenda(memberCount) {
   return BASE_AGENDA.map(item => {
     if (item.id === 'intro') {
-      const perPerson = Math.floor(2400 / memberCount);
+      const perPerson = item.presentDuration + item.feedbackDuration; // 480s = 8分
       return {
         ...item,
         presenterDuration: perPerson,
-        presenterFeedbackDuration: Math.floor(perPerson * 0.4),
-        desc: `1人あたり約${formatSeconds(perPerson)}（発表＋フィードバック）`,
+        duration: perPerson * memberCount,
+        desc: `1人あたり約${formatMin(perPerson)}（発表${formatMin(item.presentDuration)}＋FB${formatMin(item.feedbackDuration)}）`,
       };
     }
     return { ...item };
@@ -74,6 +76,7 @@ let agenda = [];
 let memberCount = 5;
 let facilitatorName = '';
 let timekeeperName = '';
+let teamName = '';
 
 let currentAgendaIndex = 0;
 let totalSecondsLeft = 0;
@@ -85,8 +88,11 @@ let isRunning = false;
 let presenterIndex = 0;
 let presenterSecondsLeft = 0;
 let presenterSecondsOriginal = 0;
-let presenterTimerInterval = null;
+let presenterTimerInterval = null; // フラグ兼用
 let presenterNames = [];
+
+// introフェーズ管理: 'present' | 'feedback'
+let introPhase = 'present';
 
 // ---- DOM ----
 const setupScreen = document.getElementById('setup-screen');
@@ -94,11 +100,14 @@ const sessionScreen = document.getElementById('session-screen');
 const facilitatorInput = document.getElementById('facilitator-name');
 const timekeeperInput = document.getElementById('timekeeper-name');
 const memberCountInput = document.getElementById('member-count');
+const teamNameInput = document.getElementById('team-name');
 const startBtn = document.getElementById('start-btn');
 
 const displayFacilitator = document.getElementById('display-facilitator');
 const displayTimekeeper = document.getElementById('display-timekeeper');
-const agendaList = document.getElementById('agenda-list');
+const displayTeam = document.getElementById('display-team');
+const displayTeamBadge = document.getElementById('display-team-badge');
+const agendaListEl = document.getElementById('agenda-list');
 
 const currentAgendaTitle = document.getElementById('current-agenda-title');
 const currentAgendaDesc = document.getElementById('current-agenda-desc');
@@ -111,8 +120,21 @@ const presenterTracker = document.getElementById('presenter-tracker');
 const currentPresenterName = document.getElementById('current-presenter-name');
 const presenterCount = document.getElementById('presenter-count');
 const presenterTimerDisplay = document.getElementById('presenter-timer-display');
-const presenterMinutes = document.getElementById('presenter-minutes');
-const presenterSecs = document.getElementById('presenter-seconds');
+const presenterMinutesEl = document.getElementById('presenter-minutes');
+const presenterSecsEl = document.getElementById('presenter-seconds');
+const presenterPhaseLabel = document.getElementById('presenter-phase-label');
+
+const introPhaseBar = document.getElementById('intro-phase-bar');
+const phaseBtnPresent = document.getElementById('phase-btn-present');
+const phaseBtnFeedback = document.getElementById('phase-btn-feedback');
+const phasePresentTime = document.getElementById('phase-present-time');
+const phaseFeedbackTime = document.getElementById('phase-feedback-time');
+
+const introGuide = document.getElementById('intro-guide');
+const guideSlackChannel = document.getElementById('guide-slack-channel');
+const guideSteps = document.querySelectorAll('.guide-step');
+
+const nextPhaseBtn = document.getElementById('next-phase-btn');
 const nextPresenterBtn = document.getElementById('next-presenter-btn');
 
 const timerStartBtn = document.getElementById('timer-start-btn');
@@ -146,15 +168,13 @@ function showAlert(icon, message) {
   alertIcon.textContent = icon;
   alertMessage.textContent = message;
   alertOverlay.classList.remove('hidden');
-  // アラート音（Web Audio API）
   playBeep();
 }
 
 function playBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const beepCount = 3;
-    for (let i = 0; i < beepCount; i++) {
+    for (let i = 0; i < 3; i++) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -167,27 +187,24 @@ function playBeep() {
       osc.start(ctx.currentTime + i * 0.35);
       osc.stop(ctx.currentTime + i * 0.35 + 0.3);
     }
-  } catch (e) {
-    // 無視
-  }
+  } catch (e) { /* 無視 */ }
 }
 
 // ---- RENDER AGENDA LIST ----
 function renderAgendaList() {
-  agendaList.innerHTML = '';
+  agendaListEl.innerHTML = '';
   agenda.forEach((item, idx) => {
     const el = document.createElement('div');
     el.className = 'agenda-item';
     if (idx === currentAgendaIndex) el.classList.add('active');
     if (idx < currentAgendaIndex) el.classList.add('completed');
-
     el.innerHTML = `
       <div class="agenda-item-num">${item.icon} ${idx + 1}</div>
       <div class="agenda-item-name">${item.name}</div>
       <div class="agenda-item-duration">⏱ ${formatMin(item.duration)}</div>
     `;
     el.addEventListener('click', () => jumpToAgenda(idx));
-    agendaList.appendChild(el);
+    agendaListEl.appendChild(el);
   });
 }
 
@@ -213,12 +230,29 @@ function loadAgenda(idx) {
   timerStartBtn.innerHTML = '<span>▶</span> 開始';
   isRunning = false;
 
-  // 発表者トラッカー
   if (item.hasPresenter) {
     presenterTracker.classList.remove('hidden');
     presenterIndex = 0;
-    presenterNames = buildPresenterNames(item);
+    presenterNames = buildPresenterNames();
     loadPresenter(item);
+
+    if (item.isIntro) {
+      introPhaseBar.classList.remove('hidden');
+      introGuide.classList.remove('hidden');
+      phasePresentTime.textContent = `(${formatMin(item.presentDuration)})`;
+      phaseFeedbackTime.textContent = `(${formatMin(item.feedbackDuration)})`;
+      const ch = teamName ? `${teamName}_ホーム` : '{チーム名}_ホーム';
+      guideSlackChannel.textContent = `Slackの #${ch}`;
+      nextPhaseBtn.classList.remove('hidden');
+      nextPresenterBtn.classList.remove('hidden');
+      setIntroPhase('present', item);
+    } else {
+      introPhaseBar.classList.add('hidden');
+      introGuide.classList.add('hidden');
+      nextPhaseBtn.classList.add('hidden');
+      nextPresenterBtn.classList.remove('hidden');
+      presenterPhaseLabel.textContent = '発表者タイマー';
+    }
   } else {
     presenterTracker.classList.add('hidden');
   }
@@ -226,36 +260,68 @@ function loadAgenda(idx) {
   renderAgendaList();
 }
 
-function buildPresenterNames(item) {
-  const names = [];
-  for (let i = 1; i <= memberCount; i++) {
-    names.push(`参加者 ${i}`);
-  }
-  return names;
+function buildPresenterNames() {
+  return Array.from({ length: memberCount }, (_, i) => `参加者 ${i + 1}`);
 }
 
 function loadPresenter(item) {
-  const duration = item.presenterDuration || 60;
   presenterIndex = 0;
+  const duration = item.isIntro ? item.presentDuration : (item.presenterDuration || 60);
   presenterSecondsLeft = duration;
   presenterSecondsOriginal = duration;
+  presenterTimerInterval = null;
   updatePresenterDisplay(item);
+  updatePresenterTimerDisplay();
+  if (item.isIntro) setIntroPhase('present', item);
+}
+
+// ---- INTRO PHASE ----
+function setIntroPhase(phase, item) {
+  introPhase = phase;
+  phaseBtnPresent.classList.toggle('active', phase === 'present');
+  phaseBtnFeedback.classList.toggle('active', phase === 'feedback');
+
+  if (phase === 'present') {
+    presenterPhaseLabel.textContent = '🗣 発表タイマー';
+    presenterSecondsLeft = item.presentDuration;
+    presenterSecondsOriginal = item.presentDuration;
+    presenterTimerInterval = null;
+    nextPhaseBtn.textContent = '💬 FBフェーズへ →';
+    nextPhaseBtn.classList.remove('hidden');
+    // ステップ0〜2をアクティブ、3を非アクティブ
+    highlightGuideSteps([0, 1, 2]);
+  } else {
+    presenterPhaseLabel.textContent = '💬 フィードバックタイマー';
+    presenterSecondsLeft = item.feedbackDuration;
+    presenterSecondsOriginal = item.feedbackDuration;
+    presenterTimerInterval = null;
+    nextPhaseBtn.classList.add('hidden');
+    // ステップ3をアクティブ
+    highlightGuideSteps([3]);
+  }
   updatePresenterTimerDisplay();
 }
 
+function highlightGuideSteps(activeIndices) {
+  guideSteps.forEach(step => {
+    const idx = parseInt(step.dataset.step);
+    step.classList.toggle('active', activeIndices.includes(idx));
+    step.classList.toggle('dim', !activeIndices.includes(idx));
+  });
+}
+
 function updatePresenterDisplay(item) {
-  const name = presenterNames[presenterIndex] || '-';
-  currentPresenterName.textContent = name;
+  currentPresenterName.textContent = presenterNames[presenterIndex] || '-';
   presenterCount.textContent = `${presenterIndex + 1} / ${memberCount}人`;
 }
 
 function updatePresenterTimerDisplay() {
   const m = Math.floor(presenterSecondsLeft / 60);
   const s = presenterSecondsLeft % 60;
-  presenterMinutes.textContent = String(m).padStart(2, '0');
-  presenterSecs.textContent = String(s).padStart(2, '0');
+  presenterMinutesEl.textContent = String(m).padStart(2, '0');
+  presenterSecsEl.textContent = String(s).padStart(2, '0');
 
-  const ratio = presenterSecondsLeft / presenterSecondsOriginal;
+  const ratio = presenterSecondsOriginal > 0 ? presenterSecondsLeft / presenterSecondsOriginal : 0;
   presenterTimerDisplay.classList.remove('warning', 'danger');
   if (ratio <= 0.15) presenterTimerDisplay.classList.add('danger');
   else if (ratio <= 0.3) presenterTimerDisplay.classList.add('warning');
@@ -280,27 +346,26 @@ function startMainTimer() {
       updateMainTimerDisplay();
       updateProgressBar();
 
-      // 自己紹介の場合は発表者タイマーも動かす
       const item = agenda[currentAgendaIndex];
       if (item.hasPresenter) {
         if (presenterSecondsLeft > 0) {
           presenterSecondsLeft--;
           updatePresenterTimerDisplay();
-        } else if (presenterSecondsLeft === 0) {
-          // 発表者時間終了通知（1回だけ）
-          if (!presenterTimerInterval) {
-            presenterTimerInterval = true; // フラグとして使用
-            showAlert('⏰', `${presenterNames[presenterIndex]}さんの時間です！\n次の発表者へ進んでください`);
+        } else if (!presenterTimerInterval) {
+          presenterTimerInterval = true;
+          const name = presenterNames[presenterIndex];
+          if (item.isIntro && introPhase === 'present') {
+            showAlert('⏰', `${name}さんの発表時間です！\nフィードバックフェーズへ進んでください`);
+          } else {
+            showAlert('⏰', `${name}さんの時間です！\n次の発表者へ進んでください`);
           }
         }
       }
 
-      // 残り30秒警告
       if (totalSecondsLeft === 30) {
         showAlert('⚠️', `「${agenda[currentAgendaIndex].name}」残り30秒です！`);
       }
     } else {
-      // タイマー終了
       stopMainTimer();
       showAlert('✅', `「${agenda[currentAgendaIndex].name}」終了！\n次のセッションへ進んでください`);
     }
@@ -330,10 +395,7 @@ function updateMainTimerDisplay() {
   timerDisplay.classList.remove('warning', 'danger', 'success');
   timerProgressBar.classList.remove('warning', 'danger');
 
-  if (totalSecondsLeft === 0) {
-    timerDisplay.classList.add('danger');
-    timerProgressBar.classList.add('danger');
-  } else if (ratio <= 0.15) {
+  if (totalSecondsLeft === 0 || ratio <= 0.15) {
     timerDisplay.classList.add('danger');
     timerProgressBar.classList.add('danger');
   } else if (ratio <= 0.3) {
@@ -343,25 +405,33 @@ function updateMainTimerDisplay() {
 }
 
 function updateProgressBar() {
-  const ratio = totalSecondsOriginal > 0
-    ? (totalSecondsLeft / totalSecondsOriginal) * 100
-    : 0;
+  const ratio = totalSecondsOriginal > 0 ? (totalSecondsLeft / totalSecondsOriginal) * 100 : 0;
   timerProgressBar.style.width = `${ratio}%`;
+}
+
+// ---- NEXT PHASE (発表→FB) ----
+function advancePhase() {
+  const item = agenda[currentAgendaIndex];
+  if (!item.isIntro || introPhase !== 'present') return;
+  setIntroPhase('feedback', item);
 }
 
 // ---- NEXT PRESENTER ----
 function advancePresenter() {
   const item = agenda[currentAgendaIndex];
   if (!item.hasPresenter) return;
-
-  presenterTimerInterval = null; // フラグリセット
+  presenterTimerInterval = null;
 
   if (presenterIndex < memberCount - 1) {
     presenterIndex++;
-    presenterSecondsLeft = item.presenterDuration || 60;
-    presenterSecondsOriginal = presenterSecondsLeft;
     updatePresenterDisplay(item);
-    updatePresenterTimerDisplay();
+    if (item.isIntro) {
+      setIntroPhase('present', item);
+    } else {
+      presenterSecondsLeft = item.presenterDuration || 60;
+      presenterSecondsOriginal = presenterSecondsLeft;
+      updatePresenterTimerDisplay();
+    }
   } else {
     showAlert('🎊', '全員の発表が終わりました！\n次のセッションへ進んでください');
   }
@@ -371,7 +441,6 @@ function advancePresenter() {
 function advanceAgenda() {
   const next = currentAgendaIndex + 1;
   if (next >= agenda.length) {
-    // セッション完了
     stopMainTimer();
     completionBanner.classList.remove('hidden');
     return;
@@ -383,6 +452,7 @@ function advanceAgenda() {
 startBtn.addEventListener('click', () => {
   facilitatorName = facilitatorInput.value.trim() || '未定';
   timekeeperName = timekeeperInput.value.trim() || '未定';
+  teamName = teamNameInput.value.trim();
   memberCount = parseInt(memberCountInput.value) || 5;
   memberCount = Math.min(10, Math.max(2, memberCount));
 
@@ -390,10 +460,15 @@ startBtn.addEventListener('click', () => {
 
   displayFacilitator.textContent = facilitatorName;
   displayTimekeeper.textContent = timekeeperName;
+  if (teamName) {
+    displayTeam.textContent = teamName;
+    displayTeamBadge.style.display = '';
+  } else {
+    displayTeamBadge.style.display = 'none';
+  }
 
   setupScreen.classList.remove('active');
   sessionScreen.classList.add('active');
-
   loadAgenda(0);
 });
 
@@ -413,17 +488,20 @@ timerResetBtn.addEventListener('click', () => {
   updateProgressBar();
   timerStartBtn.innerHTML = '<span>▶</span> 開始';
 
-  // 発表者タイマーもリセット
   const item = agenda[currentAgendaIndex];
   if (item && item.hasPresenter) {
     presenterTimerInterval = null;
-    presenterSecondsLeft = presenterSecondsOriginal;
-    updatePresenterTimerDisplay();
+    if (item.isIntro) {
+      setIntroPhase('present', item);
+    } else {
+      presenterSecondsLeft = presenterSecondsOriginal;
+      updatePresenterTimerDisplay();
+    }
   }
 });
 
 timerNextBtn.addEventListener('click', advanceAgenda);
-
+nextPhaseBtn.addEventListener('click', advancePhase);
 nextPresenterBtn.addEventListener('click', advancePresenter);
 
 alertCloseBtn.addEventListener('click', () => {
@@ -438,7 +516,6 @@ restartBtn.addEventListener('click', () => {
   timerStartBtn.innerHTML = '<span>▶</span> 開始';
 });
 
-// スペースキーでタイマー操作
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   if (e.code === 'Space') {
@@ -447,11 +524,8 @@ document.addEventListener('keydown', (e) => {
       alertOverlay.classList.add('hidden');
       return;
     }
-    if (isRunning) {
-      timerPauseBtn.click();
-    } else if (!timerStartBtn.disabled) {
-      timerStartBtn.click();
-    }
+    if (isRunning) timerPauseBtn.click();
+    else if (!timerStartBtn.disabled) timerStartBtn.click();
   }
   if (e.code === 'ArrowRight') {
     e.preventDefault();

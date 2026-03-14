@@ -45,6 +45,7 @@
       <div class="roles-bar">
         <span class="role-badge facilitator">司会: <strong id="display-facilitator">-</strong></span>
         <span class="role-badge timekeeper">タイムキープ: <strong id="display-timekeeper">-</strong></span>
+        <span class="role-badge team" id="display-team-badge" style="display:none">チーム: <strong id="display-team">-</strong></span>
       </div>
 
       <!-- アジェンダ一覧 -->
@@ -72,13 +73,35 @@
             <span class="presenter-name" id="current-presenter-name">-</span>
             <span class="presenter-count" id="presenter-count"></span>
           </div>
+
+          <!-- 発表フェーズ表示（intro専用） -->
+          <div id="intro-phase-bar" class="phase-bar hidden">
+            <button class="phase-btn active" id="phase-btn-present">🗣 発表 <span id="phase-present-time"></span></button>
+            <div class="phase-arrow">→</div>
+            <button class="phase-btn" id="phase-btn-feedback">💬 フィードバック <span id="phase-feedback-time"></span></button>
+          </div>
+
+          <!-- 進め方ガイド（intro専用） -->
+          <div id="intro-guide" class="intro-guide hidden">
+            <div class="guide-title">📋 進め方</div>
+            <ol class="guide-steps" id="guide-steps">
+              <li class="guide-step" data-step="0">発表者が自己紹介図解のURLを <strong id="guide-slack-channel">Slack</strong> に投稿する</li>
+              <li class="guide-step" data-step="1">グループ全員がそのURLをブラウザで開く</li>
+              <li class="guide-step" data-step="2">発表者が図解を見せながら自己紹介する（発表時間内）</li>
+              <li class="guide-step" data-step="3">メンバーが口頭でフィードバックを伝える<br><span class="guide-note">「良いところ」と「もっとよくできるところ」の両方</span></li>
+            </ol>
+          </div>
+
           <div class="presenter-timer">
-            <span class="presenter-timer-label">発表者タイマー</span>
+            <span class="presenter-timer-label" id="presenter-phase-label">発表者タイマー</span>
             <div class="presenter-timer-display" id="presenter-timer-display">
               <span id="presenter-minutes">00</span>:<span id="presenter-seconds">00</span>
             </div>
           </div>
-          <button id="next-presenter-btn" class="btn btn-secondary">次の発表者へ →</button>
+          <div class="presenter-btns">
+            <button id="next-phase-btn" class="btn btn-secondary hidden">💬 FBフェーズへ →</button>
+            <button id="next-presenter-btn" class="btn btn-secondary">次の発表者へ →</button>
+          </div>
         </div>
 
         <div class="timer-controls">

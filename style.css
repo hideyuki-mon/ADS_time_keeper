@@ -401,6 +401,138 @@ header h1 {
 .presenter-timer-display.warning { color: var(--warning); }
 .presenter-timer-display.danger { color: var(--danger); }
 
+/* ---- PRESENTER BTNS ---- */
+.presenter-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* ---- PHASE BAR ---- */
+.phase-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.phase-btn {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.phase-btn.active {
+  background: rgba(79, 70, 229, 0.2);
+  border-color: var(--primary-light);
+  color: var(--primary-light);
+}
+
+.phase-arrow {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* ---- INTRO GUIDE ---- */
+.intro-guide {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.guide-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.guide-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-step {
+  font-size: 0.88rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  color: var(--text-muted);
+  transition: all 0.3s;
+  line-height: 1.5;
+  counter-increment: step-counter;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.guide-step::before {
+  content: counter(step-counter);
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.3s;
+}
+
+.guide-steps {
+  counter-reset: step-counter;
+}
+
+.guide-step.active {
+  color: var(--text);
+  background: rgba(79, 70, 229, 0.1);
+  border-left-color: var(--primary-light);
+}
+
+.guide-step.active::before {
+  background: var(--primary);
+  color: #fff;
+}
+
+.guide-step.dim {
+  opacity: 0.4;
+}
+
+.guide-note {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+/* ---- ROLES BAR: TEAM ---- */
+.role-badge.team {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: var(--secondary);
+  color: #7dd3fc;
+}
+
 /* ---- TIMER CONTROLS ---- */
 .timer-controls {
   display: flex;
