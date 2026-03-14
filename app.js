@@ -267,14 +267,10 @@ function loadAgenda(idx) {
       phaseFeedbackTime.textContent = `(${formatMin(item.feedbackDuration)})`;
       const ch = teamName ? `${teamName}_ホーム` : '{チーム名}_ホーム';
       guideSlackChannel.textContent = `Slackの #${ch}`;
-      nextPhaseBtn.classList.remove('hidden');
-      nextPresenterBtn.classList.remove('hidden');
       setIntroPhase('present', item);
     } else {
       introPhaseBar.classList.add('hidden');
       introGuide.classList.add('hidden');
-      nextPhaseBtn.classList.add('hidden');
-      nextPresenterBtn.classList.remove('hidden');
       presenterPhaseLabel.textContent = '発表者タイマー';
     }
   } else {
@@ -309,15 +305,12 @@ function setIntroPhase(phase, item) {
     presenterSecondsLeft = item.presentDuration;
     presenterSecondsOriginal = item.presentDuration;
     presenterTimerInterval = null;
-    nextPhaseBtn.textContent = '💬 FBフェーズへ →';
-    nextPhaseBtn.classList.remove('hidden');
     highlightGuideSteps([0, 1, 2]);
   } else {
     presenterPhaseLabel.textContent = '💬 フィードバックタイマー';
     presenterSecondsLeft = item.feedbackDuration;
     presenterSecondsOriginal = item.feedbackDuration;
     presenterTimerInterval = null;
-    nextPhaseBtn.classList.add('hidden');
     highlightGuideSteps([3]);
   }
   updatePresenterTimerDisplay();
