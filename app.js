@@ -200,21 +200,33 @@ const MEMBER_OPTIONS = [
 // ---- 参加者名プルダウンの動的生成 ----
 function renderMemberNameInputs(count) {
   memberNamesGrid.innerHTML = '';
-  const optionsHtml = `<option value="">-- 選択してください --</option>` +
-    MEMBER_OPTIONS.map(name => `<option value="${name}">${name}</option>`).join('');
 
   for (let i = 0; i < count; i++) {
     const div = document.createElement('div');
     div.className = 'input-group';
-    const selected = memberNames[i] || '';
-    div.innerHTML = `
-      <label>参加者 ${i + 1}</label>
-      <select class="member-name-input">
-        ${optionsHtml.replace(`value="${selected}"`, `value="${selected}" selected`)}
-      </select>
-    `;
+    div.innerHTML = `<label>参加者 ${i + 1}</label><select class="member-name-input" data-idx="${i}"></select>`;
     memberNamesGrid.appendChild(div);
   }
+  updateMemberDropdowns();
+
+  memberNamesGrid.addEventListener('change', () => updateMemberDropdowns());
+}
+
+// 各プルダウンから他で選択済みの名前を除外して再描画
+function updateMemberDropdowns() {
+  const selects = Array.from(memberNamesGrid.querySelectorAll('.member-name-input'));
+  const selectedValues = selects.map(s => s.value);
+
+  selects.forEach((sel, i) => {
+    const current = selectedValues[i];
+    const othersSelected = selectedValues.filter((v, j) => j !== i && v !== '');
+
+    sel.innerHTML = `<option value="">-- 選択してください --</option>` +
+      MEMBER_OPTIONS
+        .filter(name => !othersSelected.includes(name))
+        .map(name => `<option value="${name}"${name === current ? ' selected' : ''}>${name}</option>`)
+        .join('');
+  });
 }
 
 memberCountInput.addEventListener('input', () => {
