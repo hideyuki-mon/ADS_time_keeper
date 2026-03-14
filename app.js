@@ -122,6 +122,7 @@ const timerMinutes = document.getElementById('timer-minutes');
 const timerSeconds = document.getElementById('timer-seconds');
 const timerProgressBar = document.getElementById('timer-progress-bar');
 const timerProgress = document.getElementById('timer-progress');
+const surveyLinkBox = document.getElementById('survey-link-box');
 
 const roleForm = document.getElementById('role-form');
 const facilitatorInput = document.getElementById('facilitator-name');
@@ -253,6 +254,13 @@ function loadAgenda(idx) {
     timerDisplay.classList.remove('hidden');
     timerProgress.classList.remove('hidden');
     timerStartBtn.disabled = false;
+  }
+
+  // アンケートリンク
+  if (item.id === 'survey') {
+    surveyLinkBox.classList.remove('hidden');
+  } else {
+    surveyLinkBox.classList.add('hidden');
   }
 
   // 発表者トラッカー

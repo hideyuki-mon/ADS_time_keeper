@@ -499,6 +499,36 @@ header h1 {
   margin-top: 1px;
 }
 
+/* ---- SURVEY LINK ---- */
+.survey-link-box {
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.btn-survey {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.btn-survey:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
 /* ---- TIMER CONTROLS ---- */
 .timer-controls {
   display: flex;

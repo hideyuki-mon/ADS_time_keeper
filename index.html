@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ADS タイムキーパー</title>
-  <link rel="stylesheet" href="style.css?v=14" />
+  <link rel="stylesheet" href="style.css?v=15" />
 </head>
 <body>
   <div id="app">
@@ -67,6 +67,14 @@
 
         <div class="timer-progress hidden" id="timer-progress">
           <div class="timer-progress-bar" id="timer-progress-bar"></div>
+        </div>
+
+        <!-- アンケートリンク（survey専用） -->
+        <div id="survey-link-box" class="survey-link-box hidden">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSd4LyjOuWJLFKJfG9qN7TiQD8XFjJ0MoS7AMSar_ZMj_IQyBg/viewform"
+             target="_blank" rel="noopener" class="btn btn-survey">
+            📝 アンケートに回答する（別タブで開く）
+          </a>
         </div>
 
         <!-- 自己紹介セクション専用：発表者トラッカー -->
@@ -141,6 +149,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
