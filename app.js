@@ -51,8 +51,8 @@ const BASE_AGENDA = [
     icon: '🗣️',
     hasPresenter: true,
     presenterDuration: null,
-    presentDuration: 180,
-    feedbackDuration: 300,
+    presentDuration: 240,
+    feedbackDuration: 240,
     isIntro: true,
   },
   {
